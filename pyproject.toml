@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "salary-api"
+version = "0.1.0"
+description = ""
+authors = ["valhallajazzy <valhallajazzy@mail.ru>"]
+readme = "README.md"
+packages = [{include = "salary_api"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+requests = "^2.31.0"
+terminaltables = "^3.1.10"
+python-dotenv = "^1.0.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
