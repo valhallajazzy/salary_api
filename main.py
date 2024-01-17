@@ -4,7 +4,13 @@ from dotenv import load_dotenv
 import requests
 from terminaltables import AsciiTable
 
-LANGUAGES = ['JavaScript', 'Java', 'Python', 'Ruby', 'PHP', 'C++', 'Go', 'Swift', '1С']
+LANGUAGES = [
+    'JavaScript',
+    'Java', 'Python',
+    'Ruby', 'PHP',
+    'C++', 'Go',
+    'Swift', '1С'
+]
 
 
 def get_average_salary(salary_from, salary_to):
@@ -43,18 +49,11 @@ def predict_rub_salaries_hh(all_pages_with_vacancies):
         vacancies = page['items']
         for vacancy in vacancies:
             salary = vacancy['salary']
-            if salary:
-                if salary['currency'] != 'RUR':
-                    continue
-                if not salary['from']:
-                    salary['from'] = 0
-                if not salary['to']:
-                    salary['to'] = 0
-                average_salary = get_average_salary(salary['from'], salary['to'])
-                if average_salary:
-                    middle_salaries.append(average_salary)
-            else:
+            if not salary or salary['currency'] != 'RUR':
                 continue
+            average_salary = get_average_salary(salary['from'], salary['to'])
+            if average_salary:
+                middle_salaries.append(average_salary)
     return middle_salaries
 
 
@@ -62,15 +61,15 @@ def get_job_statistics_hh(languages=LANGUAGES):
     processed_statistics = {}
     for language in languages:
         all_pages_with_vacancies_hh = get_all_vacancies_by_prog_language_hh(language)
-        predict_rub_salaries = predict_rub_salaries_hh(all_pages_with_vacancies_hh)
-        if not len(predict_rub_salaries):
+        salaries = predict_rub_salaries_hh(all_pages_with_vacancies_hh)
+        if not len(salaries):
             len_salaries = 1
         else:
-            len_salaries = len(predict_rub_salaries)
+            len_salaries = len(salaries)
         processed_language = {
             "vacancies_found": all_pages_with_vacancies_hh[0]['found'],
-            "vacancies_processed": len(predict_rub_salaries),
-            "average_salary": int(sum(predict_rub_salaries) / len_salaries)
+            "vacancies_processed": len(salaries),
+            "average_salary": int(sum(salaries) / len_salaries)
         }
         processed_statistics[language] = processed_language
     return processed_statistics
@@ -83,18 +82,17 @@ def get_all_vacancies_by_prog_language_sj(token, language):
     while more_results:
         url = 'https://api.superjob.ru/2.0/vacancies/'
         catalog_number_by_industry = 48
-        headers = {
-            'X-Api-App-Id': token}
+        headers = {'X-Api-App-Id': token}
         params = {'catalogues': catalog_number_by_industry,
                   'town': 'Москва',
                   'page': page,
                   'keyword': language}
         response = requests.get(url, headers=headers, params=params)
         response.raise_for_status()
-        vacancies = response.json()
-        all_pages_by_request.append(vacancies)
+        page_by_request = response.json()
+        all_pages_by_request.append(page_by_request)
         page += 1
-        more_results = response.json()['more']
+        more_results = page_by_request['more']
     return all_pages_by_request
 
 
@@ -103,12 +101,10 @@ def predict_rub_salary_sj(all_pages_with_vacancies_sj):
     for page in all_pages_with_vacancies_sj:
         vacancies = page['objects']
         for vacancy in vacancies:
-            if vacancy['currency'] == 'rub':
-                average_salary = get_average_salary(vacancy['payment_from'], vacancy['payment_to'])
-                if average_salary:
-                    middle_salaries.append(average_salary)
-            else:
+            average_salary = get_average_salary(vacancy['payment_from'], vacancy['payment_to'])
+            if not average_salary or vacancy['currency'] != 'rub':
                 continue
+            middle_salaries.append(average_salary)
     return middle_salaries
 
 
